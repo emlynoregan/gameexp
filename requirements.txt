@@ -1,0 +1,7 @@
+boto3 >= 1.21.36
+requests
+fastapi
+mangum
+youtube_transcript_api
+py-youtube
+openai

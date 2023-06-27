@@ -1,0 +1,6 @@
+requests
+fastapi
+mangum
+youtube_transcript_api
+py-youtube
+openai

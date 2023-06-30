@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 
-const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, mapBottomRight }) => {
+const GameView = ({ images, sprites, viewCenter, viewWidth, mapTopLeft, mapBottomRight }) => {
 /* 
     images is a list of image objects. An image must be suitable for using with the canvas drawImage 
     function. Allowed image types are HTMLImageElement, SVGImageElement, HTMLVideoElement, HTMLCanvasElement, 
@@ -15,7 +15,11 @@ const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, m
         rotation: The rotation of the sprite in degrees.
     The sprites are drawn in the order they appear in the list, using in-order traversal of inner lists.
 
-    viewTopLeft and viewBottomRight are the top left and bottom right corners of this view in the game world.
+    viewCenter and viewWidth are used to synthesise viewTopLeft and viewBottomRight. viewCenter is the center
+    of the view in the game world. viewWidth is the width of the view in the game world. We want the game 
+    world to show up square on the canvas, so the viewHeight is calculated from the viewWidth and the aspect
+    ratio of the canvas. viewTopLeft and viewBottomRight are the top left and bottom right corners of the view01
+    viewTopLeft and viewBottomRight can then be calculated from viewCenter and viewWidth, and the aspect ratio.
 
     mapTopLeft and mapBottomRight are the top left and bottom right corners of the whole map in the game world. We 
     will paint black outside this area.
@@ -27,18 +31,32 @@ const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, m
     const containerRef = useRef(null);
     const animationFrameIdRef = useRef(null);
 
+    const canvas = canvasRef.current;
+
+    const [canvasSize, setCanvasSize] = useState(null);
+
+    useEffect(() => {
+        if (canvas && canvasSize) {
+            canvas.width = canvasSize.width;
+            canvas.height = canvasSize.height;
+        }
+    }, [canvasSize, canvas]);
+
     useEffect(() => {
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
         const container = containerRef.current;
 
+        const aspectRatio = canvas.height / canvas.width;
+
+        const viewHeight = viewWidth * aspectRatio;
+
+        const viewTopLeft = { x: viewCenter.x - viewWidth / 2, y: viewCenter.y - viewHeight / 2 };
+        const viewBottomRight = { x: viewCenter.x + viewWidth / 2, y: viewCenter.y + viewHeight / 2 };
+
         let resizeTimeout;
 
         const GameSizeToCanvasSize = canvas.width / (viewBottomRight.x - viewTopLeft.x);
-
-        const ratioHeightToWidth = canvas.height / canvas.width;
-
-        const adjustedViewBottom = viewTopLeft.y + (viewBottomRight.x - viewTopLeft.x) * ratioHeightToWidth;
 
         // Function to update canvas size
         const updateCanvasSize = () => {
@@ -48,8 +66,10 @@ const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, m
 
             resizeTimeout = setTimeout(() => {
                 if (container) {
-                    canvas.width = container.offsetWidth;
-                    canvas.height = container.offsetHeight;
+                    // only do this if the value is changed
+                    if (!(canvas.width === container.offsetWidth && canvas.height === container.offsetHeight)) {
+                        setCanvasSize({ width: container.offsetWidth, height: container.offsetHeight });
+                    }
                 }
             }, 100);
         };
@@ -84,7 +104,7 @@ const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, m
             
             // First, if the view is entirely outside the map, then we can just draw the whole canvas black.
 
-            if (viewBottomRight.x < mapTopLeft.x || viewTopLeft.x > mapBottomRight.x || adjustedViewBottom < mapTopLeft.y || viewTopLeft.y > mapBottomRight.y) {
+            if (viewBottomRight.x < mapTopLeft.x || viewTopLeft.x > mapBottomRight.x || viewBottomRight.y < mapTopLeft.y || viewTopLeft.y > mapBottomRight.y) {
                 context.fillRect(0, 0, canvas.width, canvas.height);
             }
             else
@@ -103,7 +123,7 @@ const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, m
                 // If the bottom of the map (mapBottomRight.y) is above the bottom of the view (viewBottomRight.y), then we need to draw
                 // a black rectangle from the bottom of the map to the bottom of the view.
 
-                if (mapBottomRight.y < adjustedViewBottom) {
+                if (mapBottomRight.y < viewBottomRight.y) {
                     const rectLeftCanvas = 0;
                     const rectTopCanvas = GameYToCanvasY(mapBottomRight.y);
                     const rectWidthCanvas = canvas.width;
@@ -157,7 +177,7 @@ const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, m
 
                 // console.log(images)
 
-                if (image && !(sprite.position.x + sprite.size < viewTopLeft.x || sprite.position.x > viewBottomRight.x || sprite.position.y + sprite.size < viewTopLeft.y || sprite.position.y > adjustedViewBottom)) {
+                if (image && !(sprite.position.x + sprite.size < viewTopLeft.x || sprite.position.x > viewBottomRight.x || sprite.position.y + sprite.size < viewTopLeft.y || sprite.position.y > viewBottomRight.y)) {
 
                     // Save the current state
                     context.save();
@@ -237,7 +257,7 @@ const GameView = ({ images, sprites, viewTopLeft, viewBottomRight, mapTopLeft, m
             clearTimeout(resizeTimeout);
         };
 
-    }, [images, sprites]);
+    }, [images, sprites, viewCenter, viewWidth, mapTopLeft, mapBottomRight, canvasSize]);
 
     return (
         <div ref={containerRef} style={{ width: '100%', height: '100%' }}>

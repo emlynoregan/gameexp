@@ -52,17 +52,7 @@ const GameExpInner = ({images}) => {
     const mapTopLeft = { x: 0, y: 0 };
     const mapBottomRight = { x: 1000, y: 1000 };
     const [viewCenter, setViewCenter] = useState({ x: 500, y: 500 });
-    const [viewSize, setViewSize] = useState(1100); 
-
-    const viewTopLeft = {
-        x: viewCenter.x - viewSize / 2,
-        y: viewCenter.y - viewSize / 2,
-    };
-
-    const viewBottomRight = {
-        x: viewCenter.x + viewSize / 2,
-        y: (viewCenter.y + viewSize / 2)
-    };
+    const [viewWidth, setViewWidth] = useState(1100); 
 
     useEffect(() => {
         const newMapTiles = [];
@@ -89,40 +79,40 @@ const GameExpInner = ({images}) => {
     }, []);
 
 
-    // when the user presses the arrow keys, move the view
-    useEffect(() => {
-        const handleKeyDown = (event) => {
-            if (event.key === 'ArrowLeft') {
-                setViewCenter((prevViewCenter) => ({
-                    ...prevViewCenter,
-                    x: prevViewCenter.x - 10,
-                }));
-            } else if (event.key === 'ArrowRight') {
-                setViewCenter((prevViewCenter) => ({
-                    ...prevViewCenter,
-                    x: prevViewCenter.x + 10,
-                }));
-            } else if (event.key === 'ArrowUp') {
-                setViewCenter((prevViewCenter) => ({
-                    ...prevViewCenter,
-                    y: prevViewCenter.y - 10,
-                }));
-            } else if (event.key === 'ArrowDown') {
-                setViewCenter((prevViewCenter) => ({
-                    ...prevViewCenter,
-                    y: prevViewCenter.y + 10,
-                }));
-            } else if (event.key === '+') {
-                setViewSize((prevViewSize) => prevViewSize - 10);
-            } else if (event.key === '-') {
-                setViewSize((prevViewSize) => prevViewSize + 10);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, []);
+    // // when the user presses the arrow keys, move the view
+    // useEffect(() => {
+    //     const handleKeyDown = (event) => {
+    //         if (event.key === 'ArrowLeft') {
+    //             setViewCenter((prevViewCenter) => ({
+    //                 ...prevViewCenter,
+    //                 x: prevViewCenter.x - 10,
+    //             }));
+    //         } else if (event.key === 'ArrowRight') {
+    //             setViewCenter((prevViewCenter) => ({
+    //                 ...prevViewCenter,
+    //                 x: prevViewCenter.x + 10,
+    //             }));
+    //         } else if (event.key === 'ArrowUp') {
+    //             setViewCenter((prevViewCenter) => ({
+    //                 ...prevViewCenter,
+    //                 y: prevViewCenter.y - 10,
+    //             }));
+    //         } else if (event.key === 'ArrowDown') {
+    //             setViewCenter((prevViewCenter) => ({
+    //                 ...prevViewCenter,
+    //                 y: prevViewCenter.y + 10,
+    //             }));
+    //         } else if (event.key === '+') {
+    //             setViewWidth((prevViewSize) => prevViewSize - 10);
+    //         } else if (event.key === '-') {
+    //             setViewWidth((prevViewSize) => prevViewSize + 10);
+    //         }
+    //     };
+    //     window.addEventListener('keydown', handleKeyDown);
+    //     return () => {
+    //         window.removeEventListener('keydown', handleKeyDown);
+    //     };
+    // }, []);
 
     // now add the character
     // the character is 32x32 pixels, and the tile map is 16 tiles (each 32x32), 4 x 4.
@@ -148,7 +138,7 @@ const GameExpInner = ({images}) => {
         const handleKeyDown = (event) => {
             if (event.key === 'a') {
                 // check if the character is at the edge of the map
-                console.log(charPosition.x, mapTopLeft.x);
+                // console.log(charPosition.x, mapTopLeft.x);
                 if (charPosition.x > mapTopLeft.x+(charSize/2)) {
                     setCharPosition((prevCharPosition) => ({
                         ...prevCharPosition,
@@ -158,7 +148,7 @@ const GameExpInner = ({images}) => {
                 setCharDirection('left');
                 setCharAnimation((prevCharAnimation) => (prevCharAnimation + 1) % 4);
             } else if (event.key === 'd') {
-                console.log(charPosition.x, mapBottomRight.x);
+                // console.log(charPosition.x, mapBottomRight.x);
                 if (charPosition.x < mapBottomRight.x-(charSize/2)) {
                     setCharPosition((prevCharPosition) => ({
                         ...prevCharPosition,
@@ -185,8 +175,12 @@ const GameExpInner = ({images}) => {
                 }
                 setCharDirection('down');
                 setCharAnimation((prevCharAnimation) => (prevCharAnimation + 1) % 4);
+            } else if (event.key === 'ArrowUp') {
+                setViewWidth((prevViewSize) => prevViewSize - 10);
+            } else if (event.key === 'ArrowDown') {
+                setViewWidth((prevViewSize) => prevViewSize + 10);
             }
-        };
+    };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => {
@@ -228,12 +222,12 @@ const GameExpInner = ({images}) => {
                     // direction="column"
                     alignItems="center"
                 >
-                    <Grid item xs={6} sx={{ height: '500px'}}>
+                    <Grid item xs={12} sx={{ height: '500px'}}>
                         <GameView
                             images={imageList} 
                             sprites={[mapTiles, charTiles]}
-                            viewTopLeft={viewTopLeft}
-                            viewBottomRight={viewBottomRight}
+                            viewCenter={viewCenter}
+                            viewWidth={viewWidth}
                             mapTopLeft={mapTopLeft}
                             mapBottomRight={mapBottomRight}
                         />
